@@ -1,0 +1,12 @@
+# Binaries
+/dolsh
+/dist/
+*.exe
+
+# Profiling & runtime artifacts
+cpu.prof
+trace.out
+debug.log
+*.db
+*.db-shm
+*.db-wal
