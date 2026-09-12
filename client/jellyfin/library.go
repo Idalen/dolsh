@@ -17,6 +17,7 @@ type Folder struct {
 }
 
 type album struct {
+	ID string `json:"Id"`
 	Name string `json:"Name"`
 }
 

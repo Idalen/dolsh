@@ -12,7 +12,7 @@ import (
 )
 
 type foldersMsg struct {
-	folders []app.Library
+	folders []app.Folder
 	err     error
 }
 

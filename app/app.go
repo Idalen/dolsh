@@ -144,6 +144,16 @@ func (a *App) RestoreSession() SessionState {
 	return SessionReady
 }
 
+type Folder struct {
+	ID   string
+	Name string
+}
+
+type Album struct {
+	ID string
+	Name string
+}
+
 func (a *App) SelectLibrary(id string) error {
 	a.config.LibraryID = id
 	if err := a.configRepo.Save(&a.config); err != nil {
@@ -152,17 +162,36 @@ func (a *App) SelectLibrary(id string) error {
 	return nil
 }
 
-func (a *App) ListFolders(ctx context.Context) ([]jellyfin.Folder, error) {
+func (a *App) ListFolders(ctx context.Context) ([]Folder, error) {
 	if _, err := a.serverURL(); err != nil {
 		return nil, err
 	}
 
-	folders, err := a.jellyfin.Library.VirtualFolders(ctx)
+	res, err := a.jellyfin.Library.VirtualFolders(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get virtual folders: %w", err)
 	}
 
+	folders := make([]Folder, len(res))
+	for i, r := range res {
+		folders[i] = Folder{ID: r.ID, Name: r.Name}
+	}
 	return folders, nil
 }
 
-func (a *App) Albums() ([]album) 
+func (a *App) Albums(ctx context.Context) ([]Album, error) {
+	if _, err := a.serverURL(); err != nil {
+		return nil, err
+	}
+
+	items, err := a.jellyfin.Library.Albums(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get virtual folders: %w", err)
+	}
+
+	albums := make([]Album, len(items))
+	for i, item := range items {
+		albums[i] = Album{ID: item.ID, Name: item.Name}
+	}
+	return albums, nil
+} 
