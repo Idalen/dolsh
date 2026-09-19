@@ -1,45 +1,27 @@
-// Package library provides the media library browsing UI for dolsh.
-package library
+// Package folder provides the folder selection UI for dolsh.
+package folder
 
 import (
-	"context"
-
 	tea "charm.land/bubbletea/v2"
 
 	"dolsh/app"
-	"dolsh/ui/component"
+	"dolsh/ui/message"
 )
 
 type model struct {
-	app      *app.App
-	ctx      context.Context
-	cancel   context.CancelFunc
-	err      error
-	size     component.Size
-	folders  []app.Library
+	folders  []app.Folder
 	selector int
 }
 
-func New(app *app.App, size component.Size) model {
-	ctx, cancel := context.WithCancel(context.Background())
-	return model{
-		app:    app,
-		ctx:    ctx,
-		cancel: cancel,
-		size:   size,
-	}
+func New() model {
+	return model{}
 }
 
 func (m model) Init() tea.Cmd {
-	return m.loadFolders
+	return message.SubmitLoadFolders()
 }
 
-func (m model) Cancel() {
-	m.cancel()
-}
-
-// setFolders replaces the folder list and keeps the selection in range.
-func (m model) setFolders(folders []app.Library) model {
+func (m model) setFolders(folders []app.Folder) model {
 	m.folders = folders
 	if m.selector >= len(folders) {
 		m.selector = 0
@@ -63,9 +45,9 @@ func (m model) moveDown() model {
 	return m
 }
 
-func (m model) selectedFolder() (app.Library, bool) {
+func (m model) selectedFolder() (app.Folder, bool) {
 	if m.selector < 0 || m.selector >= len(m.folders) {
-		return app.Library{}, false
+		return app.Folder{}, false
 	}
 	return m.folders[m.selector], true
 }

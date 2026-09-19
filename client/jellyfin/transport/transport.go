@@ -17,9 +17,7 @@ type Client struct {
 	headers    http.Header
 }
 
-type option func(*Client)
-
-func New(baseURL *url.URL, opts ...option) *Client {
+func New(baseURL *url.URL, opts ...clientOption) *Client {
 	httpClient := http.Client{
 		Timeout: 10 * time.Second,
 		Transport: &http.Transport{
@@ -52,10 +50,11 @@ func (c *Client) Request[Request any, Response any](
 	method string,
 	path string,
 	body Request,
+	params ...queryOption,
 ) (Response, error) {
 	var res Response
 
-	req, err := c.newRequest(ctx, method, path, body)
+	req, err := c.newRequest(ctx, method, path, body, params...)
 	if err != nil {
 		return res, err
 	}
@@ -93,6 +92,7 @@ func (c *Client) newRequest[T any](
 	method string,
 	path string,
 	body T,
+	params ...queryOption,
 ) (*http.Request, error) {
 	var buf bytes.Buffer
 
@@ -117,6 +117,12 @@ func (c *Client) newRequest[T any](
 			req.Header.Add(key, value)
 		}
 	}
+
+	query := req.URL.Query()
+	for _, opt := range params {
+		opt(&query)
+	}
+	req.URL.RawQuery = query.Encode()
 
 	return req, nil
 }

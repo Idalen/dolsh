@@ -32,7 +32,7 @@ type config struct {
 	URL         string `toml:"url"`
 	AccessToken string `toml:"access_token"`
 	UserID      string `toml:"user_id"`
-	LibraryID   string `toml:"library_id"`
+	FolderID   string `toml:"folder_id"`
 }
 
 // SessionState describes the authentication state of the app at startup.
@@ -41,7 +41,7 @@ type SessionState int
 const (
 	SessionNeedsSetup SessionState = iota
 	SessionNeedsLogin
-	SessionNeedsLibrary
+	SessionNeedsFolder
 	SessionReady
 )
 
@@ -137,8 +137,8 @@ func (a *App) RestoreSession() SessionState {
 
 	a.jellyfin = client
 
-	if a.config.LibraryID == "" {
-		return SessionNeedsLibrary
+	if a.config.FolderID == "" {
+		return SessionNeedsFolder
 	}
 
 	return SessionReady
@@ -154,8 +154,8 @@ type Album struct {
 	Name string
 }
 
-func (a *App) SelectLibrary(id string) error {
-	a.config.LibraryID = id
+func (a *App) SelectFolder(id string) error {
+	a.config.FolderID = id
 	if err := a.configRepo.Save(&a.config); err != nil {
 		return fmt.Errorf("save config: %w", err)
 	}
@@ -184,7 +184,7 @@ func (a *App) Albums(ctx context.Context) ([]Album, error) {
 		return nil, err
 	}
 
-	items, err := a.jellyfin.Library.Albums(ctx)
+	items, err := a.jellyfin.Library.Albums(ctx, a.config.FolderID)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get virtual folders: %w", err)
 	}

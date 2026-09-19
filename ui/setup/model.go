@@ -4,20 +4,15 @@ package setup
 import (
 	tea "charm.land/bubbletea/v2"
 
-	"dolsh/app"
 	"dolsh/ui/component"
 )
 
 type model struct {
-	app   *app.App
 	input component.Input
-	size  component.Size
-	err   error
 }
 
-func New(app *app.App) model {
+func New() model {
 	return model{
-		app:   app,
 		input: component.NewInput("http(s)://your-jellyfin-server.com"),
 	}
 }

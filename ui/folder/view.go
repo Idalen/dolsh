@@ -1,10 +1,11 @@
-package library
+package folder
 
 import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 
 	"dolsh/ui/component"
+	"dolsh/ui/screen"
 )
 
 const (
@@ -20,8 +21,8 @@ func contentWidth(screenWidth int) int {
 	return max(screenWidth-2*horizontalMargin, 20)
 }
 
-func (m model) View() tea.View {
-	w := contentWidth(m.size.Width)
+func (m model) View(err error, size screen.Size) tea.View {
+	w := contentWidth(size.Width)
 
 	titleStyle := lipgloss.NewStyle().
 		Foreground(component.Accent).
@@ -48,12 +49,12 @@ func (m model) View() tea.View {
 
 	lines := []string{
 		titleStyle.Render("dolsh"),
-		subtitleStyle.Render("Choose a library"),
+		subtitleStyle.Render("Choose a folder"),
 		spacer,
 	}
 
-	if m.err != nil {
-		lines = append(lines, errorStyle.Render("✗ "+m.err.Error()))
+	if err != nil {
+		lines = append(lines, errorStyle.Render("✗ "+err.Error()))
 	}
 
 	lines = append(lines, m.renderFolders(w))
@@ -63,8 +64,8 @@ func (m model) View() tea.View {
 	block := lipgloss.JoinVertical(lipgloss.Left, lines...)
 
 	view := block
-	if m.size.Width > 0 && m.size.Height > 0 {
-		view = lipgloss.Place(m.size.Width, m.size.Height, lipgloss.Center, lipgloss.Center, block)
+	if size.Width > 0 && size.Height > 0 {
+		view = lipgloss.Place(size.Width, size.Height, lipgloss.Center, lipgloss.Center, block)
 	}
 
 	v := tea.NewView(view)

@@ -1,4 +1,4 @@
-package setup
+package library
 
 import (
 	tea "charm.land/bubbletea/v2"
@@ -18,9 +18,7 @@ func contentWidth(screenWidth int) int {
 		return defaultWidth
 	}
 
-	w := max(screenWidth-2*horizontalMargin, 20)
-
-	return w
+	return max(screenWidth-2*horizontalMargin, 20)
 }
 
 func (m model) View(err error, size screen.Size) tea.View {
@@ -37,12 +35,6 @@ func (m model) View(err error, size screen.Size) tea.View {
 		Width(w).
 		Align(lipgloss.Center)
 
-	labelStyle := lipgloss.NewStyle().
-		Foreground(component.Foreground).
-		Bold(true).
-		Width(w).
-		Align(lipgloss.Left)
-
 	errorStyle := lipgloss.NewStyle().
 		Foreground(component.Danger).
 		Width(w).
@@ -57,10 +49,7 @@ func (m model) View(err error, size screen.Size) tea.View {
 
 	lines := []string{
 		titleStyle.Render("dolsh"),
-		subtitleStyle.Render("Connect to your Jellyfin server"),
-		spacer,
-		labelStyle.Render("Server URL"),
-		m.input.SetWidth(w).View(),
+		subtitleStyle.Render("Choose an album"),
 		spacer,
 	}
 
@@ -68,7 +57,9 @@ func (m model) View(err error, size screen.Size) tea.View {
 		lines = append(lines, errorStyle.Render("✗ "+err.Error()))
 	}
 
-	lines = append(lines, spacer, helpStyle.Render("enter · continue      q · quit"))
+	lines = append(lines, m.renderAlbums(w))
+
+	lines = append(lines, spacer, helpStyle.Render("↑/↓ · choose      enter · open      q · quit"))
 
 	block := lipgloss.JoinVertical(lipgloss.Left, lines...)
 
@@ -81,4 +72,30 @@ func (m model) View(err error, size screen.Size) tea.View {
 	v.AltScreen = true
 
 	return v
+}
+
+func (m model) renderAlbums(w int) string {
+	itemStyle := lipgloss.NewStyle().
+		Foreground(component.Foreground).
+		Width(w).
+		Align(lipgloss.Left)
+
+	selectedStyle := lipgloss.NewStyle().
+		Foreground(component.Accent).
+		Bold(true).
+		Width(w).
+		Align(lipgloss.Left)
+
+	lines := make([]string, 0, len(m.albums))
+	for i, album := range m.albums {
+		prefix := "  "
+		style := itemStyle
+		if i == m.selector {
+			prefix = "▸ "
+			style = selectedStyle
+		}
+		lines = append(lines, style.Render(prefix+album.Name))
+	}
+
+	return lipgloss.JoinVertical(lipgloss.Left, lines...)
 }

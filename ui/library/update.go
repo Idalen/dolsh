@@ -1,4 +1,4 @@
-package setup
+package library
 
 import (
 	tea "charm.land/bubbletea/v2"
@@ -9,15 +9,17 @@ import (
 
 func (m model) Update(msg tea.Msg) (screen.Model, tea.Cmd, error) {
 	switch msg := msg.(type) {
+	case message.AlbumsMsg:
+		return m.setAlbums(msg.Albums), nil, nil
+
 	case tea.KeyPressMsg:
 		switch msg.String() {
-		case "enter":
-			return m, message.SubmitServerURL(m.input.Value()), nil
+		case "up":
+			return m.moveUp(), nil, nil
+		case "down":
+			return m.moveDown(), nil, nil
 		}
 	}
 
-	var cmd tea.Cmd
-	m.input, cmd = m.input.Update(msg)
-
-	return m, cmd, nil
+	return m, nil, nil
 }

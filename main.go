@@ -10,11 +10,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"dolsh/app"
-	"dolsh/ui/component"
-	"dolsh/ui/folder"
-	"dolsh/ui/login"
-	"dolsh/ui/player"
-	"dolsh/ui/setup"
+	"dolsh/ui"
 )
 
 var profile = flag.Bool("profile", false, "write cpu.prof and trace.out")
@@ -55,19 +51,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	var start tea.Model
-	switch a.RestoreSession() {
-	case app.SessionReady:
-		start = player.New(a)
-	case app.SessionNeedsLibrary:
-		start = library.New(a, component.Size{})
-	case app.SessionNeedsLogin:
-		start = login.New(a, component.Size{})
-	default:
-		start = setup.New(a)
-	}
+	ui := ui.New(a)
 
-	p := tea.NewProgram(start)
+	p := tea.NewProgram(ui)
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Alas, there's been an error: %v", err)
 		os.Exit(1)

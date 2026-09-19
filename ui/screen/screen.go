@@ -4,6 +4,12 @@ import (
 	tea "charm.land/bubbletea/v2"
 )
 
+type Model interface {
+	Init() tea.Cmd
+	Update(tea.Msg) (Model, tea.Cmd, error)
+	View(error, Size) tea.View
+}
+
 type Cancellable interface {
 	Cancel()
 }
