@@ -97,6 +97,14 @@ func (a *App) serverURL() (*url.URL, error) {
 	return url.ParseRequestURI(a.config.URL)
 }
 
+// client returns the authenticated jellyfin client, if one exists.
+func (a *App) client() (*jellyfin.Client, error) {
+	if a.jellyfin == nil {
+		return nil, ErrNotAuthenticated
+	}
+	return a.jellyfin, nil
+}
+
 func (a *App) Login(ctx context.Context, username, password string) (err error) {
 	u, err := a.serverURL()
 	if err != nil {
@@ -154,6 +162,11 @@ type Album struct {
 	Name string
 }
 
+type Track struct {
+	ID string
+	Name string
+}
+
 func (a *App) SelectFolder(id string) error {
 	a.config.FolderID = id
 	if err := a.configRepo.Save(&a.config); err != nil {
@@ -163,11 +176,12 @@ func (a *App) SelectFolder(id string) error {
 }
 
 func (a *App) ListFolders(ctx context.Context) ([]Folder, error) {
-	if _, err := a.serverURL(); err != nil {
+	client, err := a.client()
+	if err != nil {
 		return nil, err
 	}
 
-	res, err := a.jellyfin.Library.VirtualFolders(ctx)
+	res, err := client.Library.VirtualFolders(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get virtual folders: %w", err)
 	}
@@ -180,11 +194,12 @@ func (a *App) ListFolders(ctx context.Context) ([]Folder, error) {
 }
 
 func (a *App) Albums(ctx context.Context) ([]Album, error) {
-	if _, err := a.serverURL(); err != nil {
+	client, err := a.client()
+	if err != nil {
 		return nil, err
 	}
 
-	items, err := a.jellyfin.Library.Albums(ctx, a.config.FolderID)
+	items, err := client.Library.Albums(ctx, a.config.FolderID)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get virtual folders: %w", err)
 	}
@@ -194,4 +209,23 @@ func (a *App) Albums(ctx context.Context) ([]Album, error) {
 		albums[i] = Album{ID: item.ID, Name: item.Name}
 	}
 	return albums, nil
+}
+
+
+func (a *App) Tracks(ctx context.Context, AlbumID string) ([]Track, error) {
+	client, err := a.client()
+	if err != nil {
+		return nil, err
+	}
+
+	items, err := client.Library.Tracks(ctx, AlbumID)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get virtual folders: %w", err)
+	}
+
+	tracks := make([]Track, len(items))
+	for i, item := range items {
+		tracks[i] = Track{ID: item.ID, Name: item.Name}
+	}
+	return tracks, nil
 } 

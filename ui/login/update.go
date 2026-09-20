@@ -10,7 +10,7 @@ import (
 
 func (m model) Update(msg tea.Msg) (screen.Model, tea.Cmd, error) {
 	switch msg := msg.(type) {
-	case message.LoginResult:
+	case message.ErrorMsg:
 		m.submitting = false
 		return m, nil, nil
 

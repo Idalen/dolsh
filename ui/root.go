@@ -37,46 +37,34 @@ func (m model) Init() tea.Cmd {
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case message.ErrorMsg:
+		m.err = msg.Err
+		next, cmd, _ := m.screen.Update(msg)
+		m.screen = next
+		return m, cmd
+
 	case message.SetServerURL:
 		return m, m.setServerURL(msg.URL)
 
 	case message.ServerURLSet:
-		if msg.Err != nil {
-			m.err = msg.Err
-			return m, nil
-		}
 		return m.navigate(m.sessionScreen())
 
 	case message.Login:
 		return m, m.login(msg.Username, msg.Password)
 
 	case message.LoginResult:
-		if msg.Err != nil {
-			m.err = msg.Err
-			next, cmd, _ := m.screen.Update(msg)
-			m.screen = next
-			return m, cmd
-		}
 		return m.navigate(m.sessionScreen())
 
 	case message.SelectFolder:
 		return m, m.selectFolder(msg.ID)
 
 	case message.FolderSelected:
-		if msg.Err != nil {
-			m.err = msg.Err
-			return m, nil
-		}
 		return m.navigate(m.sessionScreen())
 
 	case message.LoadFolders:
 		return m, m.loadFolders()
 
 	case message.FoldersMsg:
-		if msg.Err != nil {
-			m.err = msg.Err
-			return m, nil
-		}
 		next, cmd, _ := m.screen.Update(msg)
 		m.screen = next
 		return m, cmd
@@ -85,10 +73,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, m.loadAlbums()
 
 	case message.AlbumsMsg:
-		if msg.Err != nil {
-			m.err = msg.Err
-			return m, nil
-		}
+		next, cmd, _ := m.screen.Update(msg)
+		m.screen = next
+		return m, cmd
+
+	case message.TracksMsg:
 		next, cmd, _ := m.screen.Update(msg)
 		m.screen = next
 		return m, cmd
@@ -118,33 +107,58 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m model) setServerURL(rawURL string) tea.Cmd {
 	return func() tea.Msg {
-		return message.ServerURLSet{Err: m.app.SetServerURL(rawURL)}
+		if err := m.app.SetServerURL(rawURL); err != nil {
+			return message.ErrorMsg{Err: err}
+		}
+		return message.ServerURLSet{}
 	}
 }
 
 func (m model) login(username, password string) tea.Cmd {
 	return func() tea.Msg {
-		return message.LoginResult{Err: m.app.Login(m.ctx, username, password)}
+		if err := m.app.Login(m.ctx, username, password); err != nil {
+			return message.ErrorMsg{Err: err}
+		}
+		return message.LoginResult{}
 	}
 }
 
 func (m model) selectFolder(id string) tea.Cmd {
 	return func() tea.Msg {
-		return message.FolderSelected{Err: m.app.SelectFolder(id)}
+		if err := m.app.SelectFolder(id); err != nil {
+			return message.ErrorMsg{Err: err}
+		}
+		return message.FolderSelected{}
 	}
 }
 
 func (m model) loadFolders() tea.Cmd {
 	return func() tea.Msg {
 		folders, err := m.app.ListFolders(m.ctx)
-		return message.FoldersMsg{Folders: folders, Err: err}
+		if err != nil {
+			return message.ErrorMsg{Err: err}
+		}
+		return message.FoldersMsg{Folders: folders}
 	}
 }
 
 func (m model) loadAlbums() tea.Cmd {
 	return func() tea.Msg {
 		albums, err := m.app.Albums(m.ctx)
-		return message.AlbumsMsg{Albums: albums, Err: err}
+		if err != nil {
+			return message.ErrorMsg{Err: err}
+		}
+		return message.AlbumsMsg{Albums: albums}
+	}
+}
+
+func (m model) loadTracks() tea.Cmd {
+	return func() tea.Msg {
+		tracks, err := m.app.Tracks(m.ctx, "")
+		if err != nil {
+			return message.ErrorMsg{Err: err}
+		}
+		return message.TracksMsg{Tracks: tracks}
 	}
 }
 

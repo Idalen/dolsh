@@ -7,13 +7,16 @@ import (
 	"dolsh/app"
 )
 
+// ErrorMsg reports an error to the root model.
+type ErrorMsg struct {
+	Err error
+}
+
 type SetServerURL struct {
 	URL string
 }
 
-type ServerURLSet struct {
-	Err error
-}
+type ServerURLSet struct{}
 
 func SubmitServerURL(rawURL string) tea.Cmd {
 	return func() tea.Msg {
@@ -26,9 +29,7 @@ type Login struct {
 	Password string
 }
 
-type LoginResult struct {
-	Err error
-}
+type LoginResult struct{}
 
 func SubmitLogin(username, password string) tea.Cmd {
 	return func() tea.Msg {
@@ -40,9 +41,7 @@ type SelectFolder struct {
 	ID string
 }
 
-type FolderSelected struct {
-	Err error
-}
+type FolderSelected struct{}
 
 func SubmitSelectFolder(id string) tea.Cmd {
 	return func() tea.Msg {
@@ -60,7 +59,6 @@ func SubmitLoadFolders() tea.Cmd {
 
 type FoldersMsg struct {
 	Folders []app.Folder
-	Err     error
 }
 
 type LoadAlbums struct{}
@@ -73,5 +71,8 @@ func SubmitLoadAlbums() tea.Cmd {
 
 type AlbumsMsg struct {
 	Albums []app.Album
-	Err    error
+}
+
+type TracksMsg struct {
+	Tracks []app.Track
 }

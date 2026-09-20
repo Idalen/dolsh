@@ -20,3 +20,13 @@ func Go(to Screen) tea.Cmd {
 		return NavigateMsg{To: to}
 	}
 }
+
+// NextMsg asks the root model to advance to the screen determined by the
+// current session state.
+type NextMsg struct{}
+
+func Next() tea.Cmd {
+	return func() tea.Msg {
+		return NextMsg{}
+	}
+}
