@@ -20,13 +20,17 @@ type Folder struct {
 }
 
 type Album struct {
-	ID   string `json:"Id"`
-	Name string `json:"Name"`
+	ID             string `json:"Id"`
+	Name           string `json:"Name"`
+	AlbumArtist    string `json:"AlbumArtist"`
+	ProductionYear int    `json:"ProductionYear"`
 }
 
 type Track struct {
-	ID string `json:"Id"`
-	Name string `json:"Name"`
+	ID           string `json:"Id"`
+	Name         string `json:"Name"`
+	IndexNumber  int    `json:"IndexNumber"`
+	RunTimeTicks int64  `json:"RunTimeTicks"`
 }
 
 func (s *LibraryService) VirtualFolders(ctx context.Context) ([]Folder, error) {
@@ -52,6 +56,7 @@ func (s *LibraryService) Albums(ctx context.Context, folderID string) ([]Album, 
 		struct{}{},
 		transport.WithMusicAlbumType(),
 		transport.WithParentID(folderID),
+		transport.WithSortBy("AlbumArtist,ProductionYear,SortName"),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch albums from jellyfin: %w", err)
@@ -74,7 +79,6 @@ func (s *LibraryService) Tracks(ctx context.Context, albumID string) ([]Track, e
 		"GET",
 		path,
 		struct{}{},
-		transport.WithMusicAlbumType(),
 		transport.WithParentID(albumID),
 	)
 	if err != nil {

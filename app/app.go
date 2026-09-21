@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"time"
 
 	"dolsh/client/jellyfin"
 	configstore "dolsh/repo/config"
@@ -158,13 +159,17 @@ type Folder struct {
 }
 
 type Album struct {
-	ID string
-	Name string
+	ID     string
+	Name   string
+	Artist string
+	Year   int
 }
 
 type Track struct {
-	ID string
-	Name string
+	ID       string
+	Name     string
+	Index    int
+	Duration time.Duration
 }
 
 func (a *App) SelectFolder(id string) error {
@@ -206,7 +211,7 @@ func (a *App) Albums(ctx context.Context) ([]Album, error) {
 
 	albums := make([]Album, len(items))
 	for i, item := range items {
-		albums[i] = Album{ID: item.ID, Name: item.Name}
+		albums[i] = Album{ID: item.ID, Name: item.Name, Artist: item.AlbumArtist, Year: item.ProductionYear}
 	}
 	return albums, nil
 }
@@ -225,7 +230,7 @@ func (a *App) Tracks(ctx context.Context, AlbumID string) ([]Track, error) {
 
 	tracks := make([]Track, len(items))
 	for i, item := range items {
-		tracks[i] = Track{ID: item.ID, Name: item.Name}
+		tracks[i] = Track{ID: item.ID, Name: item.Name, Index: item.IndexNumber, Duration: time.Duration(item.RunTimeTicks) * 100 * time.Nanosecond}
 	}
 	return tracks, nil
 } 

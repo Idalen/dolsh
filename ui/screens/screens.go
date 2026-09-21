@@ -1,6 +1,15 @@
-package screen
+package screens
 
 import tea "charm.land/bubbletea/v2"
+
+type Screen int
+
+const (
+	Setup Screen = iota
+	Login
+	Folder
+	Library
+)
 
 type Size struct {
 	Width  int

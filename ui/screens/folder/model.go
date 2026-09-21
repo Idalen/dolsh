@@ -2,23 +2,46 @@
 package folder
 
 import (
+	"context"
+
 	tea "charm.land/bubbletea/v2"
 
 	"dolsh/app"
 	"dolsh/ui/message"
+	"dolsh/ui/screens"
 )
+
+type folderService interface {
+	ListFolders(ctx context.Context) ([]app.Folder, error)
+	SelectFolder(id string) error
+}
 
 type model struct {
 	folders  []app.Folder
 	selector int
+	size     screens.Size
+	err      error
+
+	svc folderService
+	ctx context.Context
 }
 
-func New() model {
-	return model{}
+func New(svc folderService, ctx context.Context) model {
+	return model{svc: svc, ctx: ctx}
 }
 
 func (m model) Init() tea.Cmd {
-	return message.SubmitLoadFolders()
+	return m.load()
+}
+
+func (m model) load() tea.Cmd {
+	return func() tea.Msg {
+		folders, err := m.svc.ListFolders(m.ctx)
+		if err != nil {
+			return message.Error{Err: err}
+		}
+		return message.Folders{Folders: folders}
+	}
 }
 
 func (m model) setFolders(folders []app.Folder) model {

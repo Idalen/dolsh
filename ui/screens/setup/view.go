@@ -1,11 +1,10 @@
-package login
+package setup
 
 import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 
 	"dolsh/ui/component"
-	"dolsh/ui/screen"
 )
 
 const (
@@ -23,8 +22,8 @@ func contentWidth(screenWidth int) int {
 	return w
 }
 
-func (m model) View(err error, size screen.Size) tea.View {
-	w := contentWidth(size.Width)
+func (m model) View() tea.View {
+	w := contentWidth(m.size.Width)
 
 	titleStyle := lipgloss.NewStyle().
 		Foreground(component.Accent).
@@ -55,38 +54,26 @@ func (m model) View(err error, size screen.Size) tea.View {
 
 	spacer := lipgloss.NewStyle().Width(w).Render("")
 
-	labels := []string{"Username", "Password"}
-
 	lines := []string{
 		titleStyle.Render("dolsh"),
-		subtitleStyle.Render("Sign in to your Jellyfin server"),
+		subtitleStyle.Render("Connect to your Jellyfin server"),
+		spacer,
+		labelStyle.Render("Server URL"),
+		m.input.SetWidth(w).View(),
 		spacer,
 	}
 
-	for i, in := range m.input {
-		lines = append(lines, labelStyle.Render(labels[i]))
-		lines = append(lines, in.SetWidth(w).View())
-		if i < len(m.input)-1 {
-			lines = append(lines, spacer)
-		}
+	if m.err != nil {
+		lines = append(lines, errorStyle.Render("✗ "+m.err.Error()))
 	}
 
-	lines = append(lines, spacer)
-
-	if m.submitting {
-		lines = append(lines, helpStyle.Render(m.spinner.View()+" signing in…"))
-	} else {
-		if err != nil {
-			lines = append(lines, errorStyle.Render("✗ "+err.Error()))
-		}
-		lines = append(lines, spacer, helpStyle.Render("enter · sign in      ↑/↓ · switch      q · quit"))
-	}
+	lines = append(lines, spacer, helpStyle.Render("enter · continue      q · quit"))
 
 	block := lipgloss.JoinVertical(lipgloss.Left, lines...)
 
 	view := block
-	if size.Width > 0 && size.Height > 0 {
-		view = lipgloss.Place(size.Width, size.Height, lipgloss.Center, lipgloss.Center, block)
+	if m.size.Width > 0 && m.size.Height > 0 {
+		view = lipgloss.Place(m.size.Width, m.size.Height, lipgloss.Center, lipgloss.Center, block)
 	}
 
 	v := tea.NewView(view)

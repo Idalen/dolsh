@@ -39,3 +39,9 @@ func WithMusicAlbumType () queryOption {
 		params.Add("IncludeItemTypes", "MusicAlbum")
 	}
 }
+
+func WithSortBy(sortBy string) queryOption {
+	return func(params *url.Values) {
+		params.Add("SortBy", sortBy)
+	}
+}

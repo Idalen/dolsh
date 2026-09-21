@@ -6,28 +6,27 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"dolsh/app"
-	"dolsh/ui/folder"
-	"dolsh/ui/library"
-	"dolsh/ui/login"
 	"dolsh/ui/message"
-	"dolsh/ui/screen"
-	"dolsh/ui/setup"
+	"dolsh/ui/screens"
+	"dolsh/ui/screens/folder"
+	"dolsh/ui/screens/library"
+	"dolsh/ui/screens/login"
+	"dolsh/ui/screens/setup"
 )
 
 type model struct {
-	screen screen.Model
+	screen tea.Model
 
 	app    *app.App
-	size   screen.Size
+	size   screens.Size
 	ctx    context.Context
 	cancel context.CancelFunc
-	err    error
 }
 
 func New(a *app.App) model {
 	m := model{app: a}
-	m.screen = m.newScreen(m.sessionScreen())
 	m.ctx, m.cancel = context.WithCancel(context.Background())
+	m.screen = m.newScreen(m.sessionScreen())
 	return m
 }
 
@@ -37,57 +36,14 @@ func (m model) Init() tea.Cmd {
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	case message.ErrorMsg:
-		m.err = msg.Err
-		next, cmd, _ := m.screen.Update(msg)
-		m.screen = next
-		return m, cmd
-
-	case message.SetServerURL:
-		return m, m.setServerURL(msg.URL)
-
-	case message.ServerURLSet:
+	case message.Next:
 		return m.navigate(m.sessionScreen())
-
-	case message.Login:
-		return m, m.login(msg.Username, msg.Password)
-
-	case message.LoginResult:
-		return m.navigate(m.sessionScreen())
-
-	case message.SelectFolder:
-		return m, m.selectFolder(msg.ID)
-
-	case message.FolderSelected:
-		return m.navigate(m.sessionScreen())
-
-	case message.LoadFolders:
-		return m, m.loadFolders()
-
-	case message.FoldersMsg:
-		next, cmd, _ := m.screen.Update(msg)
-		m.screen = next
-		return m, cmd
-
-	case message.LoadAlbums:
-		return m, m.loadAlbums()
-
-	case message.AlbumsMsg:
-		next, cmd, _ := m.screen.Update(msg)
-		m.screen = next
-		return m, cmd
-
-	case message.TracksMsg:
-		next, cmd, _ := m.screen.Update(msg)
-		m.screen = next
-		return m, cmd
-
-	case screen.NavigateMsg:
-		return m.navigate(msg.To)
 
 	case tea.WindowSizeMsg:
-		m.size = screen.FromWindowSize(msg)
-		return m, nil
+		m.size = screens.FromWindowSize(msg)
+		next, cmd := m.screen.Update(msg)
+		m.screen = next
+		return m, cmd
 
 	case tea.KeyPressMsg:
 		switch msg.String() {
@@ -96,112 +52,56 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	next, cmd, err := m.screen.Update(msg)
+	next, cmd := m.screen.Update(msg)
 	m.screen = next
-	if err != nil {
-		m.err = err
-	}
 
 	return m, cmd
 }
 
-func (m model) setServerURL(rawURL string) tea.Cmd {
-	return func() tea.Msg {
-		if err := m.app.SetServerURL(rawURL); err != nil {
-			return message.ErrorMsg{Err: err}
-		}
-		return message.ServerURLSet{}
-	}
-}
-
-func (m model) login(username, password string) tea.Cmd {
-	return func() tea.Msg {
-		if err := m.app.Login(m.ctx, username, password); err != nil {
-			return message.ErrorMsg{Err: err}
-		}
-		return message.LoginResult{}
-	}
-}
-
-func (m model) selectFolder(id string) tea.Cmd {
-	return func() tea.Msg {
-		if err := m.app.SelectFolder(id); err != nil {
-			return message.ErrorMsg{Err: err}
-		}
-		return message.FolderSelected{}
-	}
-}
-
-func (m model) loadFolders() tea.Cmd {
-	return func() tea.Msg {
-		folders, err := m.app.ListFolders(m.ctx)
-		if err != nil {
-			return message.ErrorMsg{Err: err}
-		}
-		return message.FoldersMsg{Folders: folders}
-	}
-}
-
-func (m model) loadAlbums() tea.Cmd {
-	return func() tea.Msg {
-		albums, err := m.app.Albums(m.ctx)
-		if err != nil {
-			return message.ErrorMsg{Err: err}
-		}
-		return message.AlbumsMsg{Albums: albums}
-	}
-}
-
-func (m model) loadTracks() tea.Cmd {
-	return func() tea.Msg {
-		tracks, err := m.app.Tracks(m.ctx, "")
-		if err != nil {
-			return message.ErrorMsg{Err: err}
-		}
-		return message.TracksMsg{Tracks: tracks}
-	}
-}
-
-func (m model) sessionScreen() screen.Screen {
+func (m model) sessionScreen() screens.Screen {
 	switch m.app.RestoreSession() {
 	case app.SessionReady:
-		return screen.Library
+		return screens.Library
 	case app.SessionNeedsFolder:
-		return screen.Folder
+		return screens.Folder
 	case app.SessionNeedsLogin:
-		return screen.Login
+		return screens.Login
 	default:
-		return screen.Setup
+		return screens.Setup
 	}
 }
 
 func (m model) View() tea.View {
-	return m.screen.View(m.err, m.size)
+	return m.screen.View()
 }
 
-func (m model) newScreen(to screen.Screen) screen.Model {
+func (m model) newScreen(to screens.Screen) tea.Model {
 	switch to {
-	case screen.Setup:
-		return setup.New()
-	case screen.Login:
-		return login.New()
-	case screen.Folder:
-		return folder.New()
-	case screen.Library:
-		return library.New()
+	case screens.Setup:
+		return setup.New(m.app)
+	case screens.Login:
+		return login.New(m.app, m.ctx)
+	case screens.Folder:
+		return folder.New(m.app, m.ctx)
+	case screens.Library:
+		return library.New(m.app, m.ctx)
 	default:
 		return nil
 	}
 }
 
-func (m model) navigate(to screen.Screen) (tea.Model, tea.Cmd) {
+func (m model) navigate(to screens.Screen) (tea.Model, tea.Cmd) {
 	if m.cancel != nil {
 		m.cancel()
 	}
 	m.ctx, m.cancel = context.WithCancel(context.Background())
 
 	m.screen = m.newScreen(to)
-	m.err = nil
 
-	return m, m.screen.Init()
+	return m, tea.Batch(
+		m.screen.Init(),
+		func() tea.Msg {
+			return tea.WindowSizeMsg{Width: m.size.Width, Height: m.size.Height}
+		},
+	)
 }
